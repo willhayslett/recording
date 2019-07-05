@@ -100,12 +100,13 @@ function startRecording() {
     console.log('Recorder stopped: ', event);
   };
   mediaRecorder.ondataavailable = handleDataAvailable;
-  mediaRecorder.start(10); // collect 10ms of data
+  mediaRecorder.start(1000); // collect 1 second of data
   console.log('MediaRecorder started', mediaRecorder);
 }
 
 function stopRecording() {
   mediaRecorder.stop();
+  close()
   console.log('Recorded Blobs: ', recordedBlobs);
 
 }
@@ -144,28 +145,42 @@ document.querySelector('button#start').addEventListener('click', async () => {
 });
 
 // converts blob to base64
-function sendBlobAsBase64(blob, cb) {
+function sendBlobAsBase64(blob) {
   const reader = new FileReader();
 
   reader.addEventListener('load', () => {
-    const dataUrl = this.result;
+    const dataUrl = reader.result;
     const base64EncodedData = dataUrl.split(',')[1];
-    sendToBackend(base64EncodedData);
+    console.log(base64EncodedData)
+    sendDataToBackend(base64EncodedData, 'someFile.webm');
   });
 
   reader.readAsDataURL(blob);
 };
 
-function sendDataToBackend(base64EncodedData) {
-  axios.post('localhost:3005/api',{data: base64EncodedData})
-    .then(res => {
-      console.log(res)
-    });
+function sendDataToBackend(base64EncodedData, fileName) {
+  const body = JSON.stringify({
+    data: base64EncodedData,
+    fileName
+  });
+  fetch('/api', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body
+  }).then(res => {
+    return res.json()
+  }).then(json => console.log(json));
 }; 
 
-function close(id) {
-  axios.post('localhost:3005/finish/', {id})
-    .then(res => {
-      console.log(res)
-    });
+function close() {
+  fetch('/final', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    }
+  }).then(res => {
+    return res.json()
+  }).then(json => console.log(json));
 }; 

@@ -1,21 +1,24 @@
 const fs = require('fs');
+const path = require('path');
 const express = require('express');
+const bodyParser = require('body-parser');
 const app = express();
 const server = require('http').createServer(app);
 
-app.use(express.static(path.join(__dirname, 'public')))
+
+app.use(express.static(path.join(__dirname, 'public')));
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json({ limit: "50MB", type:'application/json'}));
 
 app.get('/', function(req, res) {
   res.sendFile(path.join(__dirname + '/index.html'))
 })
 
-const chunks = [];
-
 app.post('/api', (req, res) => {
-  const { data, filename } = req.body;
+  const { data } = req.body;
   const dataBuffer = new Buffer(data, 'base64');
   try {
-    const fileStream = fs.createWriteStream(`somedir/${filename}`, {flags: 'a'});
+    const fileStream = fs.createWriteStream('finalvideo2.webm', {flags: 'a'});
     fileStream.write(dataBuffer);
     console.log(dataBuffer);
     return res.json({gotit: true});
@@ -24,18 +27,15 @@ app.post('/api', (req, res) => {
   }
 });
 
-// app.post('/finish', (req, res) => {
-//   const { filename } = req.body;
-
-//   const buf = Buffer.concat(chunks);
-
-//   console.log(buf) //empty buff
-//   fs.writeFile('save.webm', buf, (err) => {
-//     console.log('Ahh....', err)
-//   });
-
-//   res.json({ save: true })
-// });
+app.post('/final', (req, res) => {
+  try {
+    const fileStream = fs.createWriteStream('finalvideo2.webm', {flags: 'a'});
+    fileStream.end();
+    return res.json({saved: true});
+  } catch (error) {
+    return res.json({saved: false});
+  }
+});
 
 function getFileStream(filePath) {
   try {
